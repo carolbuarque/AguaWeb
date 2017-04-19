@@ -1,0 +1,12 @@
+{% extends "graph_generator/base.html" %}
+
+{% block content %}
+    <p>Add a new serie:</p>
+
+    <form action="{%url 'graph_generator:new_serie' %}" method='post'>
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button name = "submit">add serie</button>
+    </form>
+    
+{% endblock content %}
