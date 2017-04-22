@@ -21,4 +21,3 @@ def new_serie(request):
     context = {'form': form}
     return render(request, 'graph_generator/new_serie.html', context)
 
-def stats(request):

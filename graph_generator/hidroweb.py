@@ -16,27 +16,6 @@ root.destroy()
 
 BeautifulSoup("html.parser")
 
-if (entrada == None): 
-    sair = input('\tArquivo de entrada nao selecionado. \n\t\tPressione enter para sair.\n')
-    sys.exit()
-
-pathname = os.path.dirname(entrada.name) #define o path de trabalho igual ao do arquivo de entrada
-os.chdir(pathname)  #muda caminho de trabalho.
-Pastaatual=os.getcwd()
-
-
-VALORES = []
-result = []
-
-while True:
- 
-    conteudo_linha = entrada.read().split("\n")
-    VALORES.append(conteudo_linha)
-        
-    if (len(conteudo_linha) <= 1):
-        break
- 
-print (VALORES, '\n')
 
 class Hidroweb(object):
 
