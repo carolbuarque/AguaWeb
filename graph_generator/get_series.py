@@ -17,10 +17,6 @@ class Get_Serie(object):
     url_estacao = 'http://hidroweb.ana.gov.br/Estacao.asp?Codigo={0}&CriaArq=true&TipoArq={1}'
     url_arquivo = 'http://hidroweb.ana.gov.br/{0}'
 
-    def __init__(self, estacao):
-        self.estacao = estacao
-        self.dados = [] 
-
     def montar_url_estacao(self, estacao, tipo=1):
         return self.url_estacao.format(estacao, tipo)
 
@@ -119,18 +115,24 @@ class Get_Serie(object):
         serie_completa.sort_index(level=['Data','Consistencia'], inplace=True)
         duplicatas=serie_completa.reset_index(level=1, drop=True).index.duplicated(keep='last')
         dados_sem_duplicatas = serie_completa[~duplicatas]
-        self.serie = dados_sem_duplicatas.reset_index(level=1, drop=True)
+        temp = dados_sem_duplicatas.reset_index(level=1, drop=True)
+        self.serie = temp.to_json(date_format = 'iso', orient = 'split')
         return self.serie
 
+    def obtem_info_posto(self):
+        response = requests.get(self.montar_url_estacao(self.estacao))
+        soup = BeautifulSoup(response.content, "lxml")
+        menu = {t.text:t.find_next_sibling("td").text for t in soup.findAll("td",{'class':'gridCampo'})}
+        return menu
     
-    def executar(self):
+    def executar(self, estacao):
+        self.estacao = estacao
+        self.dados = []
         post_data = {'cboTipoReg': '9'}
         est = self.estacao
         r = requests.post(self.montar_url_estacao(est), data=post_data)
         link = self.obter_link_arquivo(r)
-        return self.cria_serie(self.estacao, link)
-        
-
-if __name__ == '__main__':
-    hid = Hidroweb(estacao)
-    r = hid.executar()
+        serie = self.cria_serie(self.estacao, link)
+        info = self.obtem_info_posto()
+        info['serie'] = serie
+        return info
