@@ -1,28 +1,5 @@
 from django.db import models
 
-class Coordenada(models.Model):
-    x = models.FloatField()
-    y = models.FloatField()
-
-
-class Localizacao(models.Model):
-    coordenadas = models.ForeignKey(Coordenada)
-    """
-    coordenadas = models.PointField(srid=4326)
-    objects = models.GeoManager()
-    """
-
-    def __unicode__(self):
-        return '%s %s' % (self.coordenadas.x, self.coordenadas.y)
-
-#class NivelConsistencia(models.Model):
-#    tipo = models.CharField(max_length=20)
-#    class Meta:
-#        verbose_name_plural = "Níveis de Consistência"
-#        verbose_name = "Nível de Consistência"
-#    def __str__(self):
-#        return '%s'%self.tipo
-
 class Posto(models.Model):
     codigo_ana = models.CharField(max_length=10)
     #localizacao = models.ForeignKey(Localizacao)
@@ -34,6 +11,8 @@ class Posto(models.Model):
     bacia = models.CharField(max_length=100, default = None)
     rio = models.CharField(max_length=100, default = None)
     area = models.CharField(max_length=100, default = None)
+    latitude = models.CharField(max_length=100, default = None)
+    longitude = models.CharField(max_length=100, default = None)
 
     def __str__(self):
         return str(self.codigo_ana)

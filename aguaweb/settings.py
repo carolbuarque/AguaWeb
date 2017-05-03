@@ -80,7 +80,7 @@ WSGI_APPLICATION = 'aguaweb.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'db',
+        'NAME': 'database_aguaweb',
         'USER': 'postgres',
         'PASSWORD': '123456',
         'HOST': 'localhost',

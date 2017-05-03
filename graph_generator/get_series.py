@@ -11,32 +11,15 @@ from tempfile import mkdtemp
 from zipfile import ZipFile
 from bs4 import BeautifulSoup
 
-from .models import SerieOriginal, SerieTemporal, Localizacao, Posto
-
-"""def get_id_temporal():
-    Funcao que retorna ID para ser usado na série temporal
-    if SerieOriginal.objects.count()>0:
-        maior_id_original = SerieOriginal.objects.latest('serie_temporal_id').serie_temporal_id
-        maior_id_temporal = SerieTemporal.objects.latest('Id').Id
-        return max([maior_id_original, maior_id_temporal])+1
-    else:
-        return 1"""
+from .models import SerieOriginal, SerieTemporal, Posto
 
 def criar_temporal(dados, datas, posto):
     """Cria a série temporal"""
     print('criar_temporal')
     cod = posto.id
     dados_temporais = list(zip(datas, dados))
-    #print("Criando série temporal id = %i"%Id)
     SerieTemporal.objects.bulk_create([SerieTemporal(Id = cod, data_e_hora = linha[0], posto = posto, dados = linha[1]) for linha in dados_temporais])
-    #print("criado")
     return cod
-    #try:
-    #    objetos_repetidos = SerieTemporal.objects.filter(Id=Id, data_e_hora=e[0], posto=posto)
-    #    objetos_repetidos.delete()
-    #except SerieTemporal.DoesNotExist:
-    #    objetos_repetidos = None
-
 
 def cria_serie_original(dados, datas, posto):
     print('criar_serie_original')
@@ -69,7 +52,6 @@ class Get_Serie(object):
         print(self.estacao)
         r = requests.get(self.montar_url_arquivo(link), stream=True)
         if r.status_code == 200:
-            #filename = self.montar_nome_arquivo(estacao)
             with open(self.montar_nome_arquivo(estacao), 'wb') as f:
                 r.raw.decode_content = True
                 shutil.copyfileobj(r.raw, f)
@@ -148,10 +130,8 @@ class Get_Serie(object):
         print('cria_index')
         inicio = self.data + dt.timedelta(days = 0.05)
         lista_datas = pd.date_range(start=inicio, periods=self.dias, freq='D', tz = 'America/Maceio')
-        #self.index = pd.DatetimeIndex(lista_datas)
         lista_consistencia=[self.consistence for i in range (self.dias)]
         arrays = [lista_datas, lista_consistencia]
-        #tuples = zip(lista_datas, lista_consistencia)
         tuples = list(zip(*arrays))
         print(tuples)
         self.index = pd.MultiIndex.from_tuples(tuples, names=('Data', 'Consistência'))
@@ -166,12 +146,10 @@ class Get_Serie(object):
         """Cria DataFrame com os dados de vazão"""
         print('cria_serie_unica')
         serie_completa = pd.concat(self.dados)
-        #serie_completa=pd.to_numeric(serie_completa, errors='coerce', downcast='float')
         serie_completa.sort_index(inplace=True)
         duplicatas = serie_completa.reset_index(level=1, drop=True).index.duplicated(keep='last')
         dados_sem_duplicatas = serie_completa[~duplicatas]
         serie = dados_sem_duplicatas.reset_index(level=1, drop=True)
-        #serie_json = serie.to_json(None, date_format='iso', orient='split')
         return serie
 
     def obtem_info_posto(self, estacao):
@@ -213,47 +191,3 @@ class Get_Serie(object):
         datas = series.index
         dados = series.values
         cria_serie_original(dados, datas, estacao)
-        #le_dados do feijão é a mesma coisa que a minha função cria_serie
-        #for i in serie:
-        #    cria_serie_original(serie[i].values,serie[i].index,posto,i)
-        #print ('** %s ** (concluído)' % (self.estacao,))
-        #info = self.obtem_info_posto()
-        #ob = self.salva_serie(serie, info, numero)
-        #return ob
-
-        #print(menu)
-        #return menu
-
-"""def salva_serie(self, serie_de_dados, informacoes, numero):
-        print('salva_serie')
-        #temp_dir = mkdtemp()
-        serie_json = serie_de_dados.to_json(None, date_format='iso', orient='split')
-        print(serie_json)
-        print(type(serie_json))
-        info = informacoes
-        a = info['Latitude']
-        b = a.replace("-", "")
-        c = b.replace(",", ".")
-        glat, mlat, slat = c.split(":")
-        d = info['Longitude']
-        e = d.replace("-", "")
-        f = e.replace(",", ".")
-        glon, mlon, slon = f.split(":")
-        lat = -(float(glat)+float(mlat)/60+float(slat)/3600)
-        lon = -(float(glon)+float(mlon)/60+float(slat)/3600)
-        o = Info.objects.create(
-            serie_id = numero,
-            dados = serie_json,
-            nome = str(info['Nome']),
-            altitude = str(info['Altitude (m)']).replace(",","."),
-            bacia = str(info['Bacia']),
-            latitude = str(lat),
-            longitude = str(lon),
-            rio = str(info['Rio']),
-            area = str(info['Área de Drenagem (km2)']),
-            )
-        o.save()
-        return o"""
-
-
-
