@@ -1,21 +1,67 @@
 from django.db import models
 
-from .get_series import Get_Serie
-from .stats import Stats
+class Coordenada(models.Model):
+    x = models.FloatField()
+    y = models.FloatField()
 
-# Create your models here.
 
-class Series(models.Model):
-    station = models.CharField(max_length=10)
+class Localizacao(models.Model):
+    coordenadas = models.ForeignKey(Coordenada)
+    """
+    coordenadas = models.PointField(srid=4326)
+    objects = models.GeoManager()
+    """
+
+    def __unicode__(self):
+        return '%s %s' % (self.coordenadas.x, self.coordenadas.y)
+
+#class NivelConsistencia(models.Model):
+#    tipo = models.CharField(max_length=20)
+#    class Meta:
+#        verbose_name_plural = "Níveis de Consistência"
+#        verbose_name = "Nível de Consistência"
+#    def __str__(self):
+#        return '%s'%self.tipo
+
+class Posto(models.Model):
+    codigo_ana = models.CharField(max_length=10)
+    #localizacao = models.ForeignKey(Localizacao)
     #https://docs.djangoproject.com/en/1.10/ref/models/fields/
     updated = models.DateTimeField(auto_now=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    serie = Get_Serie(station)
-    q90 = Stats.q90(serie)
-    #q50 = Stats.q50(serie)
+    nome = models.CharField(max_length=100, default = None)
+    altitude = models.CharField(max_length=100, default = None)
+    bacia = models.CharField(max_length=100, default = None)
+    rio = models.CharField(max_length=100, default = None)
+    area = models.CharField(max_length=100, default = None)
 
     def __str__(self):
-        return str(self.station)
+        return str(self.codigo_ana)
 
     def __unicode__(self):
-        return str(self.station)
+        return str(self.codigo_ana)
+
+    def get_absolute_url(self):
+        return "/%i/" %self.codigo_ana
+
+DEFAULT_POSTO = 1
+
+class SerieTemporal(models.Model):
+    Id = models.IntegerField(unique=False)
+    dados = models.FloatField(null=True)
+    data_e_hora = models.DateTimeField(verbose_name='Data e Hora', unique=False)
+    posto = models.ForeignKey(Posto, null=True, on_delete=models.CASCADE)
+    #nivel_consistencia = models.IntegerField(verbose_name="Nível de Consistência", null=False, default=None)
+    class Meta:
+        unique_together = (("Id","data_e_hora","posto"),)
+        verbose_name_plural = "Séries Temporais"
+        verbose_name = "Série Temporal"
+
+
+class SerieOriginal(models.Model):
+    posto = models.ForeignKey(Posto, null=True, on_delete=models.CASCADE)
+    serie_temporal_id = models.IntegerField(null=True)
+
+"""class Stats(models.Model):
+    q90 = models.ForeignKey(Series, default=DEFAULT_SERIE)"""
+

@@ -1,9 +1,9 @@
 from django import forms
 
-from .models import Series
+from .models import Posto
 
-class SerieForm(forms.ModelForm):
+class FormCriaPosto(forms.ModelForm):
     class Meta:
-        model = Series
-        fields = ['station']
-        labels = {'station': ''}
+        model = Posto
+        fields = ['codigo_ana']
+        labels = {'Código ANA': ''}

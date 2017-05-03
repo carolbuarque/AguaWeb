@@ -1,32 +1,70 @@
 import calendar
-import datetime
+import datetime as dt
 import os
 import pandas as pd
 import requests
 import re
 import shutil
+from datetime import datetime
 from shutil import move
 from tempfile import mkdtemp
 from zipfile import ZipFile
 from bs4 import BeautifulSoup
 
-#from . import models
+from .models import SerieOriginal, SerieTemporal, Localizacao, Posto
+
+"""def get_id_temporal():
+    Funcao que retorna ID para ser usado na série temporal
+    if SerieOriginal.objects.count()>0:
+        maior_id_original = SerieOriginal.objects.latest('serie_temporal_id').serie_temporal_id
+        maior_id_temporal = SerieTemporal.objects.latest('Id').Id
+        return max([maior_id_original, maior_id_temporal])+1
+    else:
+        return 1"""
+
+def criar_temporal(dados, datas, posto):
+    """Cria a série temporal"""
+    print('criar_temporal')
+    cod = posto.id
+    dados_temporais = list(zip(datas, dados))
+    #print("Criando série temporal id = %i"%Id)
+    SerieTemporal.objects.bulk_create([SerieTemporal(Id = cod, data_e_hora = linha[0], posto = posto, dados = linha[1]) for linha in dados_temporais])
+    #print("criado")
+    return cod
+    #try:
+    #    objetos_repetidos = SerieTemporal.objects.filter(Id=Id, data_e_hora=e[0], posto=posto)
+    #    objetos_repetidos.delete()
+    #except SerieTemporal.DoesNotExist:
+    #    objetos_repetidos = None
+
+
+def cria_serie_original(dados, datas, posto):
+    print('criar_serie_original')
+    """Cria série original a partir de um DataFrame"""
+    Id = criar_temporal(dados, datas, posto)
+    print("Criando Série Original para a temporal de ID: "+str(Id))
+    o = SerieOriginal.objects.create(posto = posto, serie_temporal_id = Id)
+    o.save()
+    return o
 
 class Get_Serie(object):
-
     url_estacao = 'http://hidroweb.ana.gov.br/Estacao.asp?Codigo={0}&CriaArq=true&TipoArq={1}'
     url_arquivo = 'http://hidroweb.ana.gov.br/{0}'
 
     def montar_url_estacao(self, estacao, tipo=1):
+        print('montar_url_estacao')
         return self.url_estacao.format(estacao, tipo)
 
     def montar_url_arquivo(self, caminho):
+        print('montar_url_arquivo')
         return self.url_arquivo.format(caminho)
 
     def montar_nome_arquivo(self, estacao):
+        print('montar_nome_arquivo')
         return u'{0}.zip'.format(estacao)
 
     def cria_serie(self, estacao, link):
+        """Cria série de dados de vazão num diretório temporário e exporta os dados para um DataFrame"""
         print(estacao)
         print(self.estacao)
         r = requests.get(self.montar_url_arquivo(link), stream=True)
@@ -35,19 +73,18 @@ class Get_Serie(object):
             with open(self.montar_nome_arquivo(estacao), 'wb') as f:
                 r.raw.decode_content = True
                 shutil.copyfileobj(r.raw, f)
-                
+
             temp_dir = mkdtemp()
             filezip = open(str(estacao)+'.zip', 'rb')
             zipp = ZipFile(filezip)
             for name in zipp.namelist():
                 zipp.extract(name,temp_dir)
             filezip.close()
-   
+
             file_path = os.path.join(temp_dir,'VAZOES.txt')
             new_filename = str(estacao)+'.txt'
             new_file_path = os.path.join(temp_dir,new_filename)
             os.rename(file_path,new_file_path)
-            
             lines = self.abre_arquivo(temp_dir)
             for line in lines:
                 self.extrai_dados(line)
@@ -57,25 +94,32 @@ class Get_Serie(object):
                 self.cria_index()
                 self.cria_series()
             serie = self.cria_serie_unica()
+            print('cria_serie')
             return serie
-
 
     def obter_link_arquivo(self, response):
         soup = BeautifulSoup(response.content, "lxml")
+        print('obter_link_arquivo')
         return soup.find('a', href=re.compile('^ARQ/'))['href']
     
     def abre_arquivo(self, dirpath):
         filename = str(self.estacao) + '.txt'
         file_path = os.path.join(dirpath,filename)
+        print('abre_arquivo')
         with open(file_path) as e:
             lines = e.read().replace(',','.').splitlines()
             del lines[0:17]
         return lines
     
     def extrai_dados(self, line):
+        print('extrai_dados')
         col = line.split(";")
         self.consistence = col[1]
-        self.data = col[2]
+        if col[3]:
+            self.data=datetime.strptime(col[2]+" "+col[3].split()[-1], '%d/%m/%Y %H:%M:%S')
+        else:
+            self.data=datetime.strptime(col[2],'%d/%m/%Y')
+        #self.data.tzinfo('')
         self.media_diaria = col[4]
         self.maxima = col[6]
         self.minima = col[7]
@@ -86,53 +130,130 @@ class Get_Serie(object):
         self.vazoes = col[16:47]
     
     def separa_data(self):
+        print('separa_data')
         d = self.data
-        self.data_formatada = datetime.datetime.strptime(d, "%d/%m/%Y")
-        self.mes = self.data_formatada.month
-        self.ano = self.data_formatada.year
+        self.mes = self.data.month
+        self.ano = self.data.year
         
     def conta_dias(self):
+        print('conta_dias')
         self.dia_da_semana, self.dias = calendar.monthrange(self.ano, self.mes)
         
     def separa_vazoes(self):
+        print('separa_vazoes')
         s = self.dias
         self.vazoes = self.vazoes[0:s]
         
     def cria_index(self):
-        lista_datas = pd.date_range(self.data, periods=self.dias, freq='D')
-        lista_consistencia = [self.consistence for i in range (self.dias)]
+        print('cria_index')
+        inicio = self.data + dt.timedelta(days = 0.05)
+        lista_datas = pd.date_range(start=inicio, periods=self.dias, freq='D', tz = 'America/Maceio')
+        #self.index = pd.DatetimeIndex(lista_datas)
+        lista_consistencia=[self.consistence for i in range (self.dias)]
         arrays = [lista_datas, lista_consistencia]
+        #tuples = zip(lista_datas, lista_consistencia)
         tuples = list(zip(*arrays))
-        self.index = pd.MultiIndex.from_tuples(tuples,names=['Data','Consistencia'])
+        print(tuples)
+        self.index = pd.MultiIndex.from_tuples(tuples, names=('Data', 'Consistência'))
         
     def cria_series(self):
+        print('cria_series')
         ds = pd.Series(self.vazoes, index = self.index, name = 'Vazao')
         ds_float = pd.to_numeric(ds,errors='coerce',downcast='float')
         self.dados.append(ds_float)
         
     def cria_serie_unica(self):
+        """Cria DataFrame com os dados de vazão"""
+        print('cria_serie_unica')
         serie_completa = pd.concat(self.dados)
-        serie_completa.sort_index(level=['Data','Consistencia'], inplace=True)
-        duplicatas=serie_completa.reset_index(level=1, drop=True).index.duplicated(keep='last')
+        #serie_completa=pd.to_numeric(serie_completa, errors='coerce', downcast='float')
+        serie_completa.sort_index(inplace=True)
+        duplicatas = serie_completa.reset_index(level=1, drop=True).index.duplicated(keep='last')
         dados_sem_duplicatas = serie_completa[~duplicatas]
-        temp = dados_sem_duplicatas.reset_index(level=1, drop=True)
-        self.serie = temp.to_json(date_format = 'iso', orient = 'split')
-        return self.serie
+        serie = dados_sem_duplicatas.reset_index(level=1, drop=True)
+        #serie_json = serie.to_json(None, date_format='iso', orient='split')
+        return serie
 
-    def obtem_info_posto(self):
-        response = requests.get(self.montar_url_estacao(self.estacao))
+    def obtem_info_posto(self, estacao):
+        print('obtem_info_posto')
+        response = requests.get(self.montar_url_estacao(estacao), stream=True)
         soup = BeautifulSoup(response.content, "lxml")
-        menu = {t.text:t.find_next_sibling("td").text for t in soup.findAll("td",{'class':'gridCampo'})}
-        return menu
-    
+        try:
+            info = {t.text:t.find_next_sibling("td").text for t in soup.findAll("td", {'class':'gridCampo'})}
+            a = info['Latitude']
+            b = a.replace("-", "")
+            c = b.replace(",", ".")
+            glat, mlat, slat = c.split(":")
+            d = info['Longitude']
+            e = d.replace("-", "")
+            f = e.replace(",", ".")
+            glon, mlon, slon = f.split(":")
+            lat = -(float(glat)+float(mlat)/60+float(slat)/3600)
+            lon = -(float(glon)+float(mlon)/60+float(slat)/3600)
+            nome = info['Nome']
+            altitude = info['Altitude (m)'].replace(",", ".")
+            bacia = str(info['Bacia'])
+            latitude = str(lat)
+            longitude = str(lon)
+            rio = str(info['Rio'])
+            area = str(info['Área de Drenagem (km2)'])
+            dados = {'nome': nome, 'altitude': altitude, 'bacia':bacia, 'latitude':latitude, 'longitude':longitude, 'rio':rio, 'area':area}
+            return dados, False
+        except:
+            return soup.findAll("p",{'class':'aviso'}),True
+
     def executar(self, estacao):
         self.estacao = estacao
         self.dados = []
         post_data = {'cboTipoReg': '9'}
-        est = self.estacao
-        r = requests.post(self.montar_url_estacao(est), data=post_data)
+        url = self.montar_url_estacao(estacao)
+        r = requests.post(url, data=post_data)
         link = self.obter_link_arquivo(r)
-        serie = self.cria_serie(self.estacao, link)
-        info = self.obtem_info_posto()
-        info['serie'] = serie
-        return info
+        series = self.cria_serie(self.estacao, link)
+        datas = series.index
+        dados = series.values
+        cria_serie_original(dados, datas, estacao)
+        #le_dados do feijão é a mesma coisa que a minha função cria_serie
+        #for i in serie:
+        #    cria_serie_original(serie[i].values,serie[i].index,posto,i)
+        #print ('** %s ** (concluído)' % (self.estacao,))
+        #info = self.obtem_info_posto()
+        #ob = self.salva_serie(serie, info, numero)
+        #return ob
+
+        #print(menu)
+        #return menu
+
+"""def salva_serie(self, serie_de_dados, informacoes, numero):
+        print('salva_serie')
+        #temp_dir = mkdtemp()
+        serie_json = serie_de_dados.to_json(None, date_format='iso', orient='split')
+        print(serie_json)
+        print(type(serie_json))
+        info = informacoes
+        a = info['Latitude']
+        b = a.replace("-", "")
+        c = b.replace(",", ".")
+        glat, mlat, slat = c.split(":")
+        d = info['Longitude']
+        e = d.replace("-", "")
+        f = e.replace(",", ".")
+        glon, mlon, slon = f.split(":")
+        lat = -(float(glat)+float(mlat)/60+float(slat)/3600)
+        lon = -(float(glon)+float(mlon)/60+float(slat)/3600)
+        o = Info.objects.create(
+            serie_id = numero,
+            dados = serie_json,
+            nome = str(info['Nome']),
+            altitude = str(info['Altitude (m)']).replace(",","."),
+            bacia = str(info['Bacia']),
+            latitude = str(lat),
+            longitude = str(lon),
+            rio = str(info['Rio']),
+            area = str(info['Área de Drenagem (km2)']),
+            )
+        o.save()
+        return o"""
+
+
+

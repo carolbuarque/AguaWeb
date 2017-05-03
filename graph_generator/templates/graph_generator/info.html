@@ -1,0 +1,54 @@
+{% extends "graph_generator/base.html" %}
+
+{% block content %}
+
+<head>
+<style>
+table, th, td {
+   border: 1px solid black;
+}
+</style>
+</head>
+<body>
+<h2> Informações sobre a estação:</h2>
+<table>
+    <tr>
+        <th>Item</th>
+        <th>Dados</th>
+    </tr>
+    <tr>
+        <td>Nome:</td>
+        <td>{{ posto.nome }}</td>
+    </tr>
+    <tr>
+        <td>Código:</td>
+        <td>{{ posto.codigo_ana }}</td>
+    </tr>
+    <tr>
+        <td>Bacia:</td>
+        <td>{{ posto.bacia }}</td>
+    </tr>
+    <tr>
+        <td>Latitude:</td>
+        <td>{{ posto.latitude }}</td>
+    </tr>
+    <tr>
+        <td>Longitude:</td>
+        <td>{{ posto.longitude }}</td>
+    </tr>
+    <tr>
+        <td>Altitude (m):</td>
+        <td>{{ posto.altitude }}</td>
+    </tr>
+    <tr>
+        <td>Área de drenagem (km²):</td>
+        <td>{{ posto.area }}</td>
+    </tr>
+</table>
+<p>
+</p>
+<p> <a href="/new_serie/serie_info/{{ posto.id }}/stats/">Estatísticas</a> </p>
+<p> <a href="/new_serie/serie_info/{{ posto.id }}/charts/">Diagrama de Gantt</a> </p>
+
+</body>
+{% endblock content %}
