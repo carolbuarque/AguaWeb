@@ -1,5 +1,63 @@
 {% extends "graph_generator/base.html" %}
 
 {% block content %}
-<a href="{%url 'graph_generator:new_serie' %}">Add a new serie:</a>
+<head>
+<style>
+table, th, td {
+   border: 1px solid black;
+}
+</style>
+</head>
+<body>
+<h2> ÁguaWeb </h2>
+<p>Sistema de Suporte à Decisão (SSD) desenvolvido pelo grupo de pesquisa em Hidrologia Computacional da Universidade Federal de Alagoas.</p>
+<p>Insira o código de uma estação de monitoramento de vazão da Agência Nacional de Águas para obter a vazão máxima outorgável 
+    nesse ponto, estatísticas relacionadas à série de dados, como q90, q50 e vazões mínima, máxima e média, e o 
+    hidrograma da série.</p>
+<p>As estações de medição de vazão que estão dentro do estado de Alagoas são:</p>
+<table>
+    <tr>
+        <td>39580000</td>
+        <td>39620000</td>
+    </tr>
+    <tr>
+        <td>39640000</td>
+        <td>39650000</td>
+    </tr>
+    <tr>
+        <td>39700000</td>
+        <td>39720000</td>
+    </tr>
+    <tr>
+        <td>39740000</td>
+        <td>39760000</td>
+    </tr>
+    <tr>
+        <td>39770000</td>
+        <td>39850000</td>
+    </tr>
+    <tr>
+        <td>39860000</td>
+        <td>39870000</td>
+    </tr>
+    <tr>
+        <td>39890000</td>
+        <td>39950000</td>
+    </tr>
+    <tr>
+        <td>39980000</td>
+        <td>49330000</td>
+    </tr>
+    <tr>
+        <td>49370000</td>
+        <td>49490000</td>
+    </tr>
+    <tr>
+        <td>49600000</td>
+        <td>49660000</td>
+    </tr>
+</table>
+<p>
+<a href="{%url 'graph_generator:nova_serie' %}">Clique aqui para analisar uma série de dados.</a>
+</p>
 {% endblock content %}

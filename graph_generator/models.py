@@ -40,7 +40,3 @@ class SerieTemporal(models.Model):
 class SerieOriginal(models.Model):
     posto = models.ForeignKey(Posto, null=True, on_delete=models.CASCADE)
     serie_temporal_id = models.IntegerField(null=True)
-
-"""class Stats(models.Model):
-    q90 = models.ForeignKey(Series, default=DEFAULT_SERIE)"""
-

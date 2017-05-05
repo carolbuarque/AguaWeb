@@ -1,0 +1,14 @@
+{% extends "graph_generator/base.html" %}
+
+{% block content %}
+<body>
+<h2> Nova Série </h2>
+    <p>Insira abaixo o código da estação da ANA:</p>
+
+    <form action="{%url 'graph_generator:nova_serie' %}" method='post'>
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button name = "submit">Adcionar estação</button>
+    </form>
+    
+{% endblock content %}

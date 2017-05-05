@@ -97,11 +97,7 @@ class Get_Serie(object):
         print('extrai_dados')
         col = line.split(";")
         self.consistence = col[1]
-        if col[3]:
-            self.data=datetime.strptime(col[2]+" "+col[3].split()[-1], '%d/%m/%Y %H:%M:%S')
-        else:
-            self.data=datetime.strptime(col[2],'%d/%m/%Y')
-        #self.data.tzinfo('')
+        self.data=datetime.strptime(col[2],'%d/%m/%Y')
         self.media_diaria = col[4]
         self.maxima = col[6]
         self.minima = col[7]
@@ -168,6 +164,10 @@ class Get_Serie(object):
             glon, mlon, slon = f.split(":")
             lat = -(float(glat)+float(mlat)/60+float(slat)/3600)
             lon = -(float(glon)+float(mlon)/60+float(slat)/3600)
+            lat = format(lat, '.3f')
+            lat = float(lat)
+            lon = format(lon, '.3f')
+            lon = float(lon)
             nome = info['Nome']
             altitude = info['Altitude (m)'].replace(",", ".")
             bacia = str(info['Bacia'])

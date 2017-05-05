@@ -1,22 +1,28 @@
-import pandas as pd, numpy as np
-import locale
-import plotly.figure_factory as FF
-import cufflinks as cf
-from plotly.offline import plot
+import pandas as pd
+import datetime
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+from matplotlib.dates import DateFormatter
 
-def hidrograma(dados_set):
-	dados = dados_set.cumsum()
-	#df = dados_set.to_dict()
-	path = 'C:/Users/Ana Carolina/sites/src/graph_generator/templates/graph_generator/hidrograma.html'
-	dados.iplot(filename = path, title='Vazão', xTitle='Tempo', yTitle = 'Vazão', bestfit=True, colors=['pink'], bestfit_colors=['blue'])
-	return path
-	#figure = iplot(cf.dict.lines().iplot(kind='scatter', asFigure=True))
-	#figure['layout']['yaxis1'].update({'title': 'Vazão', 'ticksuffix': ' m³/s'})
-	# na sequência insere-se o dicionário no plot
-	#plot(figure,filename = 'hidrograma.html')
+from .models import Posto
 
-	# https://plot.ly/ipython-notebooks/cufflinks/
-	# https://plot.ly/python/configuration-options/
-	# plotly.tools.set_credentials_file(username='cfsouza', api_key='BF3QhM9qpmbCTyP6bms8')
-
-	# Redefinição do layout da figura gerada no cufflinks
+def hidro(dados_set, posto_id):
+	posto = get_object_or_404(Posto, pk=posto_id)
+	cod = posto.codigo_ana
+	title='Hidrograma da estação nº '+str(cod)
+	fig=Figure()
+	ax=fig.add_subplot(111)
+	x=dados_set.index
+	y=dados_set
+	ax.plot_date(x, y, '-')
+	ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))
+	ax.set_ylabel('Vazão (m³/s)')
+	ax.set_xlabel('Data')
+	ax.set_title(title)
+	fig.autofmt_xdate()
+	canvas=FigureCanvas(fig)
+	response=HttpResponse(content_type='image/png')
+	canvas.print_png(response)
+	return response

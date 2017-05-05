@@ -1,0 +1,44 @@
+{% extends "graph_generator/base.html" %}
+
+{% block content %}
+<head>
+<style>
+table, th, td {
+   border: 1px solid black;
+}
+</style>
+</head>
+<body>
+<h2> Estatísticas </h2>
+<table>
+    <tr>
+        <th>Índice</th>
+        <th>Valor</th>
+    </tr>
+     <tr>
+        <td>Vazão Máxima Outorgável (m³/s)</td>
+        <td>{{ vazao_max_out }}</td>
+    </tr>
+    <tr>
+        <td>Vazão Média (m³/s)</td>
+        <td>{{ media }}</td>
+    </tr>
+    <tr>
+        <td>Vazão Máxima (m³/s)</td>
+        <td>{{ maxima }}</td>
+    </tr>
+    <tr>
+        <td>Vazão Mínima (m³/s)</td>
+        <td>{{ minima }}</td>
+    </tr>
+    <tr>
+        <td>Q90 (m³/s)</td>
+        <td>{{ q90 }}</td>
+    </tr>
+    <tr>
+        <td>Q50 (m³/s)</td>
+        <td>{{ q50 }}</td>
+    </tr>
+</table>
+
+{% endblock content %}
